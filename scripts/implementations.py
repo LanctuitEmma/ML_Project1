@@ -4,7 +4,7 @@ import csv
 import numpy as np
 
 def compute_mse(y, tx, w):
-    e=np.subtract(y,tx.dot(w.T))
+    e=y-tx.dot(w)
     return (e**2).mean()
 
 def compute_gradient(y, tx, w):
@@ -55,15 +55,15 @@ def least_squares_GD(y,tx, initial_w, max_iters, gamma):
     for n_iter in range(max_iters):
         grad = compute_gradient(y,tx,w)
         w = w - gamma*grad
-
+    mse = compute_mse(y,tx,w)
     return (compute_mse(y,tx,w), w)
 
-def least_squares_SGD(y,tx,initial_w, max_iters, gamma):
+def least_squares_SGD(y,tx,initial_w,batch_size, max_iters, gamma):
     """calculate the least squares solution using stochiastic gradient descent."""
     w = initial_w
     for n_iter in range(max_iters):
         for minibatch_y, minibatch_tx in batch_iter(y, tx, batch_size,1):
-            grad = compute_stoch_gradient(y,tx,w)
+            grad = compute_gradient(y,tx,w)
             w = w - gamma*grad
     return (compute_mse(y,tx,w), w)
 
