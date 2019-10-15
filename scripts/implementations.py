@@ -105,8 +105,8 @@ def build_poly(x, degree):
     """build polynomial for ridge regression"""
     nb_features = x.shape[1]
     nb_samples = x.shape[0]
-    x_poly = np.zeros((nb_samples, nb_features))
-    for d in range(1, degree+1):
+    x_poly = np.ones((nb_samples, 1))
+    for d in range(1, degree + 1):
         x_d = x**d
         x_poly = np.hstack((x_poly, x_d))
     return x_poly
