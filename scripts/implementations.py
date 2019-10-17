@@ -13,6 +13,16 @@ def compute_gradient(y, tx, w):
     coef = -1/tx.shape[0]
     return coef* (tx.T @ e)
 
+def calculate_loss_logistic_reg(y, tx, w):
+    """compute the cost by negative log likelihood."""
+    o = sigmoid(tx@w)
+    log = np.sum(y.T@np.log(o)+(1-y.T)@np.log(1-o))
+    return -log
+
+def sigmoid(t):
+    """apply sigmoid function on t."""
+    return 1/(1+np.exp(-t))
+
 def standardize(x):
     """Standardize the original data set."""
     mean_x = np.nanmean(x)
@@ -83,10 +93,33 @@ def ridge_regression(y,tx,lambda_):
     return (compute_mse(y,tx,lambda_), opt_w)
 
 def logistic_regression(y,tx,initial_w, max_iters, gamma):
-    raise
+    threshold = 1e-8
+    losses = []
+    w=initial_w
+    # start the logistic regression
+    for iter in range(max_iters):
+        # get loss and update w.
+        loss = calculate_loss_logistic_reg(y,tx,w)
+        gradient = compute_gradient(y,tx,w)
+        w = w-gamma*gradient
+        # converge criterion
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
+    return loss,w
 
 def reg_logistic_regression(y,tx,lambda_,initial_w,max_iters,gamma):
-    """
-   
-    """
-    raise
+    threshold = 1e-8
+    losses = []
+    w = np.zeros((tx.shape[1], 1))
+
+    # start the logistic regression
+    for iter in range(max_iters):
+        loss= calculate_loss_logistic_reg(y,tx,w)+lambda_*np.squeeze(w.T.dot(w))
+        gradient= compute_gradient(y,tx,w)+ 2*lambda_*w
+        w = w-gamma*gradient
+        # converge criterion
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
+    return loss,w
