@@ -2,6 +2,7 @@
 """All function should return (w,loss)."""
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
 
 def compute_mse(y, tx, w):
     e=y-tx.dot(w)
@@ -58,6 +59,58 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
             yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
             """****************************************************************************************"""
+def ridge_regression_s(y, tx, lambda_):
+    """implement ridge regression."""
+    length = y.shape[0]
+    lambda_p = 2 * length * lambda_
+    w_rr = np.linalg.inv(tx.T.dot(tx) + lambda_p * np.eye(tx.shape[1])).dot(tx.T).dot(y)
+    return (w_rr, compute_mse(y, tx, w_rr))
+
+def build_poly(x, degree):
+    """build polynomial for ridge regression"""
+    nb_features = x.shape[1]
+    nb_samples = x.shape[0]
+    x_poly = np.zeros((nb_samples, nb_features))
+    for d in range(1, degree+1):
+        x_d = x**d
+        x_poly = np.hstack((x_poly, x_d))
+    return x_poly
+
+def build_k_indices(y, k_fold, seed):
+    """build k indices for k-fold."""
+    num_row = y.shape[0]
+    interval = int(num_row / k_fold)
+    np.random.seed(seed)
+    indices = np.random.permutation(num_row)
+    k_indices = [indices[k * interval: (k + 1) * interval]
+                 for k in range(k_fold)]
+    return np.array(k_indices)
+
+def cross_validation_rr(y, x, k_indices, k, lambda_, degree):
+    """return the loss of ridge regression."""
+    x_test = x[k_indices[k]]
+    x_train = np.delete(x, [k_indices[k]], axis=0)
+    y_test = y[k_indices[k]]
+    y_train = np.delete(y, [k_indices[k]], axis=0)
+
+    x_tr_poly = build_poly(x_train, degree)
+    x_te_poly = build_poly(x_test, degree)
+
+    w, loss_tr = ridge_regression_s(y_train, x_tr_poly, lambda_)
+    loss_te = compute_mse(y_test, x_te_poly, w)
+
+    return loss_tr, loss_te
+
+def cross_validation_visualization(lambds, mse_tr, mse_te):
+    """visualization the curves of mse_tr and mse_te."""
+    plt.semilogx(lambds, mse_tr, marker=".", color='b', label='train error')
+    plt.semilogx(lambds, mse_te, marker=".", color='r', label='test error')
+    plt.xlabel("lambda")
+    plt.ylabel("rmse")
+    plt.title("cross validation")
+    plt.legend(loc=2)
+    plt.grid(True)
+    plt.savefig("cross_validation") 
 
 def least_squares_GD(y,tx, initial_w, max_iters, gamma):
     """calculate the least squares solution using gradient descent."""
