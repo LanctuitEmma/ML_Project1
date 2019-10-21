@@ -17,7 +17,8 @@ def compute_gradient(y, tx, w):
 def calculate_loss_logistic_reg(y, tx, w):
     """compute the cost by negative log likelihood."""
     o = sigmoid(tx@w)
-    log = np.sum(y.T@np.log(o)+(1-y.T)@np.log(1-o))
+    log = np.sum(y.T@np.log(o+1e-5)+(1-y.T)@np.log(1-o+1e-5))
+    del o
     return -log
 
 def sigmoid(t):
@@ -29,7 +30,6 @@ def standardize(x):
     mean_x = np.nanmean(x)
     x = x - mean_x
     std_x = np.nanstd(x)
-    print(std_x)
     x = x / std_x
     return x, mean_x, std_x
 
@@ -66,15 +66,13 @@ def ridge_regression_s(y, tx, lambda_):
     w_rr = np.linalg.inv(tx.T.dot(tx) + lambda_p * np.eye(tx.shape[1])).dot(tx.T).dot(y)
     return (w_rr, compute_mse(y, tx, w_rr))
 
-def build_poly(x, degree):
-    """build polynomial for ridge regression"""
-    nb_features = x.shape[1]
-    nb_samples = x.shape[0]
-    x_poly = np.zeros((nb_samples, nb_features))
-    for d in range(1, degree+1):
-        x_d = x**d
-        x_poly = np.hstack((x_poly, x_d))
-    return x_poly
+def return_factors(x):
+    """This function takes a number and returns its factors"""
+    factors = []
+    for i in range(2,10):
+        if x % i == 0:
+            factors.append(i)
+    return factors
 
 def build_k_indices(y, k_fold, seed):
     """build k indices for k-fold."""
@@ -129,7 +127,6 @@ def least_squares_SGD(y,tx,initial_w,batch_size, max_iters, gamma):
             grad = compute_gradient(y,tx,w)
             w = w - gamma*grad
     return (compute_mse(y,tx,w), w)
-
 
 def least_squares(y,tx):
     """calculate the least squares solution using normal equation."""
