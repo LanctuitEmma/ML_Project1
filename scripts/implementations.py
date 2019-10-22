@@ -10,9 +10,11 @@ def compute_mse(y, tx, w):
 
 def compute_gradient(y, tx, w):
     """Compute the gradient."""
-    e = y- tx.dot(w)
+    e = y - tx @ w
+    # w is (n_features)
+    # e shape is n_rows
     coef = -1/tx.shape[0]
-    return coef* (tx.T @ e)
+    return coef * (tx.T @ e)
 
 def calculate_loss_logistic_reg(y, tx, w):
     """compute the cost by negative log likelihood."""
@@ -27,11 +29,21 @@ def sigmoid(t):
 
 def standardize(x):
     """Standardize the original data set."""
-    mean_x = np.nanmean(x)
-    x = x - mean_x
-    std_x = np.nanstd(x)
-    x = x / std_x
-    return x, mean_x, std_x
+    num_valid_values = np.count_nonzero(~np.isnan(x), axis=0)
+    valid_columns = num_valid_values > 0
+    x_valid_cols = x[:, valid_columns]
+    
+    mean_x = np.nanmean(x_valid_cols, axis=0)
+    std_x = np.nanstd(x_valid_cols, axis=0)
+    x_norm = np.zeros(x.shape, dtype=x.dtype)
+    x_norm[:,valid_columns] =  ( x_valid_cols - mean_x[None, :] ) / std_x[None, :]
+    num_cols = x.shape[1]
+    
+    mean_x_ret = np.zeros(num_cols, dtype=x.dtype)
+    mean_x_ret[valid_columns] = mean_x
+    std_x_ret = np.zeros(num_cols, dtype=x.dtype)
+    std_x_ret[valid_columns] = std_x    
+    return x_norm, mean_x_ret, std_x_ret
 
 def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
     """
@@ -130,7 +142,7 @@ def least_squares_SGD(y,tx,initial_w,batch_size, max_iters, gamma):
 
 def least_squares(y,tx):
     """calculate the least squares solution using normal equation."""
-    opt_w = np.linalg.solve(tx.T@tx,tx.T@y)
+    opt_w = np.linalg.lstsq(tx.T@tx,tx.T@y)[0]
     return (compute_mse(y,tx,opt_w), opt_w)
     
 def ridge_regression(y,tx,lambda_):
@@ -146,11 +158,18 @@ def logistic_regression(y,tx,initial_w, max_iters, gamma):
     threshold = 1e-8
     losses = []
     w=initial_w
+    
+    if np.any(np.isnan(tx)):
+        print("logistic: training poisoned with nans")
+    #print(f"logistic: tx {np.mean(tx, axis=0)}{np.std(tx,axis=0)}")
+    
     # start the logistic regression
     for iter in range(max_iters):
         # get loss and update w.
         loss = calculate_loss_logistic_reg(y,tx,w)
         gradient = compute_gradient(y,tx,w)
+        #gradient /= np.linalg.norm(gradient)
+        #print(f"logistic: g {np.linalg.norm(gradient)}")
         w = w-gamma*gradient
         # converge criterion
         losses.append(loss)
