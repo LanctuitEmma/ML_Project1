@@ -16,6 +16,15 @@ def compute_gradient(y, tx, w):
     coef = -1/tx.shape[0]
     return coef * (tx.T @ e)
 
+def build_poly(x, degree):
+    nb_features = x.shape[1]
+    nb_samples = x.shape[0]
+    x_poly = np.ones((nb_samples, 1))
+    for d in range(1, degree+1):
+        x_d = x**d
+        x_poly = np.hstack((x_poly, x_d))
+    return x_poly
+
 def calculate_loss_logistic_reg(y, tx, w):
     """compute the cost by negative log likelihood."""
     o = sigmoid(tx@w)
