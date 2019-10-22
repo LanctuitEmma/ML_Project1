@@ -16,15 +16,6 @@ def compute_gradient(y, tx, w):
     coef = -1/tx.shape[0]
     return coef * (tx.T @ e)
 
-def build_poly(x, degree):
-    nb_features = x.shape[1]
-    nb_samples = x.shape[0]
-    x_poly = np.ones((nb_samples, 1))
-    for d in range(1, degree+1):
-        x_d = x**d
-        x_poly = np.hstack((x_poly, x_d))
-    return x_poly
-
 def calculate_loss_logistic_reg(y, tx, w):
     """compute the cost by negative log likelihood."""
     o = sigmoid(tx@w)
@@ -79,21 +70,149 @@ def batch_iter(y, tx, batch_size, num_batches=1, shuffle=True):
         if start_index != end_index:
             yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
 
-            """****************************************************************************************"""
-def ridge_regression_s(y, tx, lambda_):
-    """implement ridge regression."""
+    
+def ridge_regression(y, tx, lambda_):
+    """
+    returns augmented model parameters and mse loss
+    inputs:
+    y -> output of the training set
+    tx -> input of the trainig set, augmented
+    lambda_ -> controls the complexity of the model
+    """
     length = y.shape[0]
     lambda_p = 2 * length * lambda_
     w_rr = np.linalg.inv(tx.T.dot(tx) + lambda_p * np.eye(tx.shape[1])).dot(tx.T).dot(y)
     return (w_rr, compute_mse(y, tx, w_rr))
 
-def return_factors(x):
-    """This function takes a number and returns its factors"""
-    factors = []
-    for i in range(2,10):
-        if x % i == 0:
-            factors.append(i)
-    return factors
+def build_poly(x, degree):
+    """
+    returns augmented features vectors
+    inputs:
+    x -> samples vectors to be augmented
+    degree -> degree of the augmentation
+    comments:
+    automatically add a 1 in front of each augmented vector 
+    """
+    nb_features = x.shape[1]
+    nb_samples = x.shape[0]
+    x_poly = np.ones((nb_samples, 1))
+    for d in range(1, degree + 1):
+        x_d = x**d
+        x_poly = np.hstack((x_poly, x_d))
+    return x_poly
+
+def ridge_regression_invest(degree, y, x):
+    """
+    Investigates the rmse loss for a ridge regression model of given degree, but for different values of lambda.
+    Uses cross-validation to train and test the model. 
+    Show a vizualization of the rmse for the trainging set and testing set.
+    inputs:
+    degree -> degree of the augmentation
+    y -> output of the training set
+    x -> input of the training set
+    """
+    seed = 1
+    k_fold = 4
+    lambdas = np.logspace(-4, 0, 30)
+    
+    # split data in k fold
+    k_indices = build_k_indices(y, k_fold, seed)
+    
+    # define lists to store the loss of training data and test data
+    rmse_tr = []
+    rmse_te = []
+    
+    # iterate over all the lambdas, compute model parameters, store the rmse
+    for i in range(len(lambdas)):
+        l = lambdas[i]
+        avg_err_tr = 0
+        avg_err_te = 0
+        for k in range(k_fold):
+            err = cross_validation_rr(y, x, k_indices, k, l, degree)
+            avg_err_tr += err[0]
+            avg_err_te += err[1]
+        rmse_tr.append(np.sqrt(2 * avg_err_tr / k_fold))
+        rmse_te.append(np.sqrt(2 * avg_err_te / k_fold))
+    visualization_rr(lambdas, rmse_tr, rmse_te)
+    
+    # find the best lambda
+    min_err_index = 0
+    for i in range(1, len(rmse_te)):
+        if rmse_te[i] < rmse_te[min_err_index]:
+            min_err_index = i
+            
+    print('Best lambda is: {0}'.format(lambdas[min_err_index]))
+    return lambdas[min_err_index]
+    
+def cross_validation_rr(y, x, k_indices, k, lambda_, degree):
+    """return the loss of ridge regression."""
+    x_test = x[k_indices[k]]
+    x_train = np.delete(x, [k_indices[k]], axis=0)
+    y_test = y[k_indices[k]]
+    y_train = np.delete(y, [k_indices[k]], axis=0)
+
+    x_tr_poly = build_poly(x_train, degree)
+    x_te_poly = build_poly(x_test, degree)
+
+    w, loss_tr = ridge_regression(y_train, x_tr_poly, lambda_)
+    loss_te = compute_mse(y_test, x_te_poly, w)
+    
+    return loss_tr, loss_te
+
+def cross_validation_lrr(y, x, k_indices, k, lambda_, gamma, max_iters, w_initial):
+    """return the loss of ridge regression."""
+    x_test = x[k_indices[k]]
+    x_train = np.delete(x, [k_indices[k]], axis=0)
+    y_test = y[k_indices[k]]
+    y_train = np.delete(y, [k_indices[k]], axis=0)
+
+    loss, opt_w=reg_logistic_regression(y_train,x_train,lambda_,w_initial,max_iters,gamma)
+    loss_te = calculate_loss_logistic_reg(y_test, x_test,opt_w)
+    return loss_te, opt_w
+
+def cross_validation_lr(y, x, k_indices, k, gamma, max_iters, w_initial):
+    """return the loss of ridge regression."""
+    x_test = x[k_indices[k]]
+    x_train = np.delete(x, [k_indices[k]], axis=0)
+    y_test = y[k_indices[k]]
+    y_train = np.delete(y, [k_indices[k]], axis=0)
+
+    loss, opt_w=logistic_regression(y_train,x_train,w_initial,max_iters,gamma)
+    loss_te = calculate_loss_logistic_reg(y_test, x_test,opt_w)
+    return loss_te, opt_w
+
+def cross_validation_ls(y, x, k_indices, k):
+    """return the loss of ridge regression."""
+    x_test = x[k_indices[k]]
+    x_train = np.delete(x, [k_indices[k]], axis=0)
+    y_test = y[k_indices[k]]
+    y_train = np.delete(y, [k_indices[k]], axis=0)
+
+    mse_tr, opt_w = least_squares(y_train,x_train)
+    mse_te = compute_mse(y_test, x_test, opt_w)
+    return mse_te, opt_w
+
+def cross_validation_ls_GD(y, x, k_indices, k, gamma, max_iters, w_initial):
+    """return the loss of ridge regression."""
+    x_test = x[k_indices[k]]
+    x_train = np.delete(x, [k_indices[k]], axis=0)
+    y_test = y[k_indices[k]]
+    y_train = np.delete(y, [k_indices[k]], axis=0)
+
+    mse_tr, opt_w=least_squares_GD(y_train,x_train,w_initial,max_iters,gamma)
+    mse_te = compute_mse(y_test, x_test,opt_w)
+    return mse_te, opt_w
+
+def cross_validation_ls_SGD(y, x, k_indices, k, gamma, max_iters, w_initial,batch_size):
+    """return the loss of ridge regression."""
+    x_test = x[k_indices[k]]
+    x_train = np.delete(x, [k_indices[k]], axis=0)
+    y_test = y[k_indices[k]]
+    y_train = np.delete(y, [k_indices[k]], axis=0)
+
+    mse_tr, opt_w=least_squares_SGD(y_train, x_train, w_initial, batch_size, max_iters, gamma)
+    mse_te = compute_mse(y_test, x_test,opt_w)
+    return mse_te, opt_w
 
 def build_k_indices(y, k_fold, seed):
     """build k indices for k-fold."""
@@ -105,22 +224,7 @@ def build_k_indices(y, k_fold, seed):
                  for k in range(k_fold)]
     return np.array(k_indices)
 
-def cross_validation_rr(y, x, k_indices, k, lambda_, degree):
-    """return the loss of ridge regression."""
-    x_test = x[k_indices[k]]
-    x_train = np.delete(x, [k_indices[k]], axis=0)
-    y_test = y[k_indices[k]]
-    y_train = np.delete(y, [k_indices[k]], axis=0)
-
-    x_tr_poly = build_poly(x_train, degree)
-    x_te_poly = build_poly(x_test, degree)
-
-    w, loss_tr = ridge_regression_s(y_train, x_tr_poly, lambda_)
-    loss_te = compute_mse(y_test, x_te_poly, w)
-
-    return loss_tr, loss_te
-
-def cross_validation_visualization(lambds, mse_tr, mse_te):
+def visualization_rr(lambds, mse_tr, mse_te):
     """visualization the curves of mse_tr and mse_te."""
     plt.semilogx(lambds, mse_tr, marker=".", color='b', label='train error')
     plt.semilogx(lambds, mse_te, marker=".", color='r', label='test error')
@@ -129,7 +233,16 @@ def cross_validation_visualization(lambds, mse_tr, mse_te):
     plt.title("cross validation")
     plt.legend(loc=2)
     plt.grid(True)
-    plt.savefig("cross_validation") 
+    plt.savefig("cross_validation")
+
+
+def return_factors(x):
+    """This function takes a number and returns its factors"""
+    factors = []
+    for i in range(2,10):
+        if x % i == 0:
+            factors.append(i)
+    return factors
 
 def least_squares_GD(y,tx, initial_w, max_iters, gamma):
     """calculate the least squares solution using gradient descent."""
@@ -137,6 +250,7 @@ def least_squares_GD(y,tx, initial_w, max_iters, gamma):
     for n_iter in range(max_iters):
         grad = compute_gradient(y,tx,w)
         w = w - gamma*grad
+       
     mse = compute_mse(y,tx,w)
     return (compute_mse(y,tx,w), w)
 
@@ -154,14 +268,6 @@ def least_squares(y,tx):
     opt_w = np.linalg.lstsq(tx.T@tx,tx.T@y)[0]
     return (compute_mse(y,tx,opt_w), opt_w)
     
-def ridge_regression(y,tx,lambda_):
-    """calculate the ridge regression solution using normal equation."""
-    l = (2*tx.shape[0]*lambda_)* np.identity(tx.shape[1])
-    fact1 = tx.T@tx +l
-    fact2 = tx.T@y
-    opt_w = np.linalg.solve(fact1,fact2)
-    "rmse = np.sqrt(2*compute_mse(y_train,x_train,opt_w))"
-    return (compute_mse(y,tx,lambda_), opt_w)
 
 def logistic_regression(y,tx,initial_w, max_iters, gamma):
     threshold = 1e-8
@@ -180,24 +286,15 @@ def logistic_regression(y,tx,initial_w, max_iters, gamma):
         #gradient /= np.linalg.norm(gradient)
         #print(f"logistic: g {np.linalg.norm(gradient)}")
         w = w-gamma*gradient
-        # converge criterion
-        losses.append(loss)
-        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-            break
     return loss,w
 
 def reg_logistic_regression(y,tx,lambda_,initial_w,max_iters,gamma):
-    threshold = 1e-8
     losses = []
-    w = np.zeros((tx.shape[1], 1))
+    w = initial_w
 
     # start the logistic regression
     for iter in range(max_iters):
         loss= calculate_loss_logistic_reg(y,tx,w)+lambda_*np.squeeze(w.T.dot(w))
         gradient= compute_gradient(y,tx,w)+ 2*lambda_*w
         w = w-gamma*gradient
-        # converge criterion
-        losses.append(loss)
-        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-            break
     return loss,w
