@@ -19,9 +19,10 @@ def compute_gradient(y, tx, w):
 def calculate_loss_logistic_reg(y, tx, w):
     """compute the cost by negative log likelihood."""
     o = sigmoid(tx@w)
-    log = np.sum(y.T@np.log(o+1e-5)+(1-y.T)@np.log(1-o+1e-5))
+    #we added 1e-5 to our sigmoid so we don't get a log(0)
+    log = y.T@np.log(o+1e-5)+(1-y.T)@np.log(1-o+1e-5)
     del o
-    return -log
+    return -log.mean()
 
 def sigmoid(t):
     """apply sigmoid function on t."""
