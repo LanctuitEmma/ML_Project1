@@ -87,7 +87,59 @@ def replace_mean(x):
         x_nan[is_nan[:, col], col] = means_cols[col]
     return x_nan
 
+#Subgrouping
+def subgrouping(x, ids, dict_):
+    x_0=x[x[:,dict_['PRI_jet_num']]==0]
+    x_1=x[x[:,dict_['PRI_jet_num']]==1]
+    x_2=x[x[:,dict_['PRI_jet_num']]==2]
+    x_3=x[x[:,dict_['PRI_jet_num']]==3]
+    x_0 = np.delete(x_0,dict_['PRI_jet_num'],1)
+    x_1 = np.delete(x_1,dict_['PRI_jet_num'],1)
+    x_2 = np.delete(x_2,dict_['PRI_jet_num'],1)
+    x_3 = np.delete(x_3,dict_['PRI_jet_num'],1)
+    x_list = [x_0, x_1, x_2, x_3]
 
+    ids_0=ids[x[:,dict_['PRI_jet_num']]==0]
+    ids_1=ids[x[:,dict_['PRI_jet_num']]==1]
+    ids_2=ids[x[:,dict_['PRI_jet_num']]==2]
+    ids_3=ids[x[:,dict_['PRI_jet_num']]==3]
+    ids_list = [ids_0]
+    ids_list.append(ids_1)
+    ids_list.append(ids_2)
+    ids_list.append(ids_3)
+    
+
+    #Standardization of subgroups
+    mean = []
+    std = []
+    x_nan_replaced = []
+    for i in range(4):
+        x_arr,m,s = standardize(x_list[i])
+        x_nan_replaced.append(replace_mean(x_arr))
+        mean.append(m)
+        std.append(s)
+    return x_nan_replaced, ids_list
+    
+#Grouping them back again
+def group(l, ids, dict_):
+    ls = l.copy()
+    for i in range(4):
+        ls[i] = np.insert(ls[i], dict_['PRI_jet_num'], np.ones((len(ids), 1)) * i, axis=1)
+    data_ord = np.insert(ls[0],0,ids[0], axis=1)
+    for i in range(1,4):
+        a = np.insert(ls[i],0,ids[i], axis=1)
+        data_ord = np.concatenate((data_ord, a))
+    x_new = data_ord[data_ord[:,0].argsort()]
+    x_new = x_new[:,1:]
+        
+    return x_new
+
+selected_columns0 = [1, 2, 3, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 29]
+selected_columns1 = [1, 2, 3, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 29]
+selected_columns_ideal = [0, 1, 2, 3, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 29]
+
+def select_non_nan_columns(x):
+    return x[:, selected_columns_ideal]
 
 
 
