@@ -4,7 +4,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import implementations_s as imp
-import proj1_helpers as helpers
+import helpers as helpers
 
 # ************************************************** least squares **************************************************
 
@@ -61,8 +61,8 @@ def cross_validation_ls_GD(y, x, k_indices, k, gamma, max_iters, w_initial):
 
 def LS_GD_demo(y, x, k): 
     seed=1
-    max_iters = 100
-    gammas = np.logspace(-2, 0, 10)
+    max_iters = 50
+    gammas = np.logspace(-3, 0, 10)
     
     tx = helpers.build_poly(x, 1)
 
@@ -121,7 +121,7 @@ def LS_SGD_demo(y, x, k):
 
     seed = 1
     max_iters = 50
-    gammas = np.logspace(-2, 0, 5)
+    gammas = np.logspace(-3, 0, 10)
     batch_sizes = np.array([1])
     
     # Initialization
@@ -250,7 +250,7 @@ def lr_demo(y, x, k):
     #Adding constant term
     tx = helpers.build_poly(x, 1)
     max_iters = 100
-    gammas = np.logspace(-3, -2, 2)
+    gammas = np.logspace(-4, 0, 10)
     seed = 1
     
     # Initialization
@@ -315,8 +315,8 @@ def lrr_demo(y, x, k):
     
     seed = 1
     max_iters = 50
-    lambdas = np.logspace(-1, 0, 10)
-    gammas = np.logspace(-1, 0, 10)
+    lambdas = np.logspace(-4, 0, 10)
+    gammas = np.logspace(-4, 0, 10)
     hyperparams = [(gamma,lambda_) for gamma in gammas for lambda_ in lambdas]
 
     w_initial = np.zeros(tx.shape[1])

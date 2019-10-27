@@ -3,7 +3,7 @@
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-import proj1_helpers as helpers
+import helpers as helpers
 
 # ************************************************** least squares and variant **************************************************
 
@@ -13,11 +13,8 @@ def compute_mse(y, tx, w):
 
 def compute_gradient(y, tx, w):
     """Compute the gradient."""
-    e = y - tx @ w
-    # w is (n_features)
-    # e shape is n_rows
-    coef = -1/tx.shape[0]
-    return coef * (tx.T @ e)
+    length = len(y)
+    return - 1 / length * tx.T.dot(y - tx.dot(w))
 
 def least_squares(y,tx):
     """calculate the least squares solution using normal equation."""
@@ -29,10 +26,10 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     w = initial_w
     for n_iter in range(max_iters):
         grad = compute_gradient(y,tx,w)
-        w = w - gamma*grad
-       
-    mse = compute_mse(y,tx,w)
-    return (compute_mse(y,tx,w), w)
+        w = w - gamma * grad
+    
+    mse = compute_mse(y, tx, w)
+    return (compute_mse(y, tx, w), w)
 
 def least_squares_SGD(y, tx, initial_w, batch_size, max_iters, gamma):
     """calculate the least squares solution using stochiastic gradient descent."""
