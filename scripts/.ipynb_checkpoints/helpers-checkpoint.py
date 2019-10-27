@@ -141,8 +141,7 @@ selected_columns_ideal = [0, 1, 2, 3, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
 
 def select_non_nan_columns(x):
     return x[:, selected_columns0]
-
-
+    
 
 # ************************************************** model helpers **************************************************
 
