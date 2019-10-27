@@ -121,17 +121,17 @@ def subgrouping(x, ids, dict_):
     return x_nan_replaced, ids_list
     
 # Grouping them back again
-def group(l, ids, dict_):
+#Grouping them back again
+def group(l,ids,dict):
     ls = l.copy()
     for i in range(4):
-        ls[i] = np.insert(ls[i], dict_['PRI_jet_num'], np.ones((len(ids), 1)) * i, axis=1)
+        ls[i] = np.insert(ls[i],dict['PRI_jet_num'],i+1,axis=1)
     data_ord = np.insert(ls[0],0,ids[0], axis=1)
     for i in range(1,4):
         a = np.insert(ls[i],0,ids[i], axis=1)
         data_ord = np.concatenate((data_ord, a))
     x_new = data_ord[data_ord[:,0].argsort()]
     x_new = x_new[:,1:]
-        
     return x_new
 
 # column indices to be kept
