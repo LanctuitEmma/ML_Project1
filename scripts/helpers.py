@@ -67,7 +67,7 @@ def standardize(x):
     mean_x = np.nanmean(x_valid_cols, axis=0)
     std_x = np.nanstd(x_valid_cols, axis=0)
     x_norm = np.zeros(x.shape, dtype=x.dtype)
-    x_norm[:,valid_columns] =  ( x_valid_cols - mean_x[None, :] ) / std_x[None, :]
+    x_norm[:,valid_columns] =  ( x_valid_cols - mean_x[np.newaxis, :] ) / std_x[np.newaxis, :]
     num_cols = x.shape[1]
     
     mean_x_ret = np.zeros(num_cols, dtype=x.dtype)
@@ -124,7 +124,7 @@ def subgrouping(x, ids, dict_):
 def group(l,ids,dict):
     ls = l.copy()
     for i in range(4):
-        ls[i] = np.insert(ls[i],dict['PRI_jet_num'],i+1,axis=1)
+        ls[i] = np.insert(ls[i],dict['PRI_jet_num'],i,axis=1)
     data_ord = np.insert(ls[0],0,ids[0], axis=1)
     for i in range(1,4):
         a = np.insert(ls[i],0,ids[i], axis=1)

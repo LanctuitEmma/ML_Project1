@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 import helpers
-import implementations_s as imp
+import implementations as imp
 import cross_validation as demo
 
 """ 

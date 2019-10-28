@@ -3,7 +3,7 @@
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-import implementations_s as imp
+import implementations as imp
 import helpers as helpers
 
 # ************************************************** least squares **************************************************
@@ -181,7 +181,7 @@ def cross_validation_rr(y, x, k_indices, k, lambda_, degree):
 def ridge_regression_demo(y, x, degree, k_fold):
     """find best hyperparameters and return error for ridge regression model"""
     seed = 1
-    lambdas = np.logspace(-4, 0, 20)
+    lambdas = np.logspace(-1.1, -0.8, 20)
     
     # split data in k fold
     k_indices = helpers.build_k_indices(y, k_fold, seed)
